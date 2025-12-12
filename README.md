@@ -47,7 +47,7 @@ Open `.env` in your editor (Visual Studio Code, Sublime, etc.) and replace:
 - `<password>` → Your Supabase database password
 - Keep everything else as-is
 
-**Example of what it should look like after editing:**
+**just copy this in your file .env:**
 
 ```env
 DATABASE_URL="postgresql://postgres.qletmpgetunvaydqvcgl:syrine22005572004@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require"
@@ -58,14 +58,6 @@ PORT=3000
 ```
 
 #### Step 4: Set Up Prisma
-
-Pull your database schema from Supabase:
-
-```bash
-npx prisma db pull
-```
-
-This creates/updates `prisma/schema.prisma` to match your live database.
 
 Generate the Prisma client:
 
