@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ActivityService } from '../activity/activity.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 
@@ -9,6 +10,7 @@ export class CommentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly activity: ActivityService,
   ) {}
 
   async create(userId: string, dto: CreateCommentDto) {
@@ -32,6 +34,9 @@ export class CommentsService {
         user: { select: { id: true, firstName: true, lastName: true, email: true } },
       },
     });
+
+    // Record activity
+    await this.activity.recordCommentAdded(userId, comment.id, dto.taskId, task.projectId).catch(() => {});
 
     // Notify task owner and assignees
     const commenterName = `${user.firstName} ${user.lastName}`.trim();

@@ -11,6 +11,7 @@ import { SubtasksModule } from './subtasks/subtasks.module';
 import { LabelsModule } from './labels/labels.module';
 import { CommentsModule } from './comments/comments.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ActivityModule } from './activity/activity.module';
 import { validate } from './config/env.validation';
 
 @Module({
@@ -29,6 +30,7 @@ import { validate } from './config/env.validation';
     LabelsModule,
     CommentsModule,
     NotificationsModule,
+    ActivityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ActivityService } from '../activity/activity.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AddMemberDto, UpdateMemberDto } from './dto/member.dto';
@@ -10,6 +11,7 @@ export class ProjectsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly activity: ActivityService,
   ) {}
 
   async create(ownerId: string, dto: CreateProjectDto) {
@@ -56,7 +58,8 @@ export class ProjectsService {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) throw new NotFoundException('Project not found');
     if (project.ownerId !== userId) throw new ForbiddenException('Only owner can update project');
-    return this.prisma.project.update({
+
+    const updated = await this.prisma.project.update({
       where: { id },
       data: {
         name: dto.name,
@@ -65,6 +68,16 @@ export class ProjectsService {
         isArchived: dto.isArchived,
       },
     });
+
+    // Record activity
+    const changes = {};
+    if (dto.name) changes['name'] = dto.name;
+    if (dto.description) changes['description'] = dto.description;
+    if (dto.color) changes['color'] = dto.color;
+    if (dto.isArchived !== undefined) changes['isArchived'] = dto.isArchived;
+    await this.activity.recordProjectUpdated(userId, id, project.name, changes).catch(() => {});
+
+    return updated;
   }
 
   async remove(userId: string, id: string) {
@@ -88,6 +101,9 @@ export class ProjectsService {
     const member = await this.prisma.projectMember.create({
       data: { projectId, userId: dto.userId, role: dto.role },
     });
+
+    // Record activity
+    await this.activity.recordProjectMemberAdded(userId, projectId, dto.userId, dto.role).catch(() => {});
 
     // Notify new member of project invite
     await this.notifications

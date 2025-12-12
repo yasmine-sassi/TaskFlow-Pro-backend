@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ActivityService } from '../activity/activity.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { FilterTaskDto } from './dto/filter-task.dto';
@@ -10,6 +11,7 @@ export class TasksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly activity: ActivityService,
   ) {}
 
   async create(userId: string, dto: CreateTaskDto) {
@@ -53,6 +55,9 @@ export class TasksService {
         },
       },
     });
+
+    // Record activity
+    await this.activity.recordTaskCreated(userId, task.id, task.title, dto.projectId);
 
     return task;
   }
@@ -220,7 +225,12 @@ export class TasksService {
     // Verify user is member of project
     await this.assertProjectMember(userId, task.projectId);
 
+    const title = task.title;
     await this.prisma.task.delete({ where: { id } });
+
+    // Record activity
+    await this.activity.recordTaskDeleted(userId, id, title, task.projectId).catch(() => {});
+
     return { deleted: true };
   }
 
@@ -258,7 +268,8 @@ export class TasksService {
         },
       },
     });
-
+    // Record activity
+    await this.activity.recordTaskAssigned(userId, taskId, assigneeId, task.projectId, task.title).catch(() => {});
     // Notify assignee
     const assignerName = `${result.owner.firstName} ${result.owner.lastName}`.trim();
     await this.notifications.notifyTaskAssignment(assigneeId, task.title, assignerName, taskId).catch(() => {
