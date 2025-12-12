@@ -1,6 +1,6 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
-import { PrismaClient } from '@prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 @Injectable()
 export class PrismaService
@@ -8,23 +8,26 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    const databaseUrl = process.env.DATABASE_URL
+    // Bypass SSL cert validation for Supabase pooler
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+    const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
-      throw new Error('DATABASE_URL is not set')
+      throw new Error('DATABASE_URL is not set');
     }
 
-    const adapter = new PrismaPg({ connectionString: databaseUrl })
+    const adapter = new PrismaPg({ connectionString: databaseUrl });
 
     super({
       adapter,
-    })
+    });
   }
 
   async onModuleInit() {
-    await this.$connect()
+    await this.$connect();
   }
 
   async onModuleDestroy() {
-    await this.$disconnect()
+    await this.$disconnect();
   }
 }
