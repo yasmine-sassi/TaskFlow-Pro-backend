@@ -8,6 +8,27 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   /**
+   * Get all users (Admin only)
+   */
+  async getAllUsers(): Promise<UserProfileResponseDto[]> {
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return users as UserProfileResponseDto[];
+  }
+
+  /**
    * Get user profile by ID
    */
   async getProfile(userId: string): Promise<UserProfileResponseDto> {
