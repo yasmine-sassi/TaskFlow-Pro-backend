@@ -3,12 +3,28 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Security middleware
+  app.use(helmet());
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:3001'],
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type,Authorization',
+  });
+
+  // Parsing & validation
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+
+  // Global response interceptor
+  app.useGlobalInterceptors(new ResponseInterceptor());
 
   // Swagger setup
   const config = new DocumentBuilder()
