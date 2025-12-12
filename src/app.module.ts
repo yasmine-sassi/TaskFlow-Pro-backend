@@ -10,6 +10,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { SubtasksModule } from './subtasks/subtasks.module';
 import { LabelsModule } from './labels/labels.module';
 import { CommentsModule } from './comments/comments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { validate } from './config/env.validation';
 
 @Module({
@@ -27,6 +28,7 @@ import { validate } from './config/env.validation';
     SubtasksModule,
     LabelsModule,
     CommentsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
