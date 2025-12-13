@@ -13,7 +13,11 @@ async function bootstrap() {
   // Security middleware
   app.use(helmet());
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:3001'],
+    origin: process.env.CORS_ORIGIN || [
+      'http://localhost:4200',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ],
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type,Authorization',
@@ -21,7 +25,9 @@ async function bootstrap() {
 
   // Parsing & validation
   app.use(cookieParser());
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  );
 
   // Global response interceptor
   app.useGlobalInterceptors(new ResponseInterceptor());
@@ -53,6 +59,8 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
   console.log(`Server running on http://localhost:${process.env.PORT ?? 3000}`);
-  console.log(`Swagger documentation available at http://localhost:${process.env.PORT ?? 3000}/api`);
+  console.log(
+    `Swagger documentation available at http://localhost:${process.env.PORT ?? 3000}/api`,
+  );
 }
 bootstrap();
