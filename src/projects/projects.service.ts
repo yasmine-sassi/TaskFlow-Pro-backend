@@ -80,10 +80,9 @@ export class ProjectsService {
     return updated;
   }
 
-  async remove(userId: string, id: string) {
+  async remove(id: string) {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) throw new NotFoundException('Project not found');
-    if (project.ownerId !== userId) throw new ForbiddenException('Only owner can delete project');
     await this.prisma.project.delete({ where: { id } });
     return { deleted: true };
   }
@@ -133,6 +132,9 @@ export class ProjectsService {
   }
 
   private async assertMember(userId: string, projectId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user?.role === 'ADMIN') return; // Admin bypass
+
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: { members: true },
@@ -143,6 +145,9 @@ export class ProjectsService {
   }
 
   private async assertOwner(userId: string, projectId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user?.role === 'ADMIN') return; // Admin bypass
+
     const project = await this.prisma.project.findUnique({ where: { id: projectId } });
     if (!project) throw new NotFoundException('Project not found');
     if (project.ownerId !== userId) throw new ForbiddenException('Only owner permitted');

@@ -134,6 +134,13 @@ export class SearchService {
   }
 
   private async getAccessibleProjectIds(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user?.role === 'ADMIN') {
+      // Admin can see all projects
+      const allProjects = await this.prisma.project.findMany({ select: { id: true } });
+      return allProjects.map((p) => p.id);
+    }
+
     const projects = await this.prisma.project.findMany({
       where: {
         OR: [{ ownerId: userId }, { members: { some: { userId } } }],

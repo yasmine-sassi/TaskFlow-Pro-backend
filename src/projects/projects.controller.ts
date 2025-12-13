@@ -2,6 +2,8 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } fro
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProjectsService } from './projects.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RoleGuard } from '../auth/guards/role.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AddMemberDto, UpdateMemberDto } from './dto/member.dto';
@@ -42,10 +44,12 @@ export class ProjectsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete project (owner only)' })
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Delete project (admin only)' })
   @ApiResponse({ status: 200, description: 'Project deleted' })
   remove(@Req() req: any, @Param('id') id: string) {
-    return this.projectsService.remove(req.user.userId, id);
+    return this.projectsService.remove(id);
   }
 
   @Get(':projectId/members')

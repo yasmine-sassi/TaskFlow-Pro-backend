@@ -9,6 +9,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Param,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateProfileDto, ChangePasswordDto, UserProfileResponseDto } from './dto';
@@ -80,5 +81,18 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async deleteAccount(@Request() req: any): Promise<{ message: string }> {
     return this.usersService.deleteAccount(req.user.userId);
+  }
+
+  @Delete(':id')
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete any user (Admin only)' })
+  @ApiResponse({ status: 200, description: 'User deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin only' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async deleteUser(@Request() req: any, @Param('id') userId: string): Promise<{ message: string }> {
+    return this.usersService.deleteUser(userId);
   }
 }

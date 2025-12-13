@@ -40,6 +40,9 @@ export class AttachmentsService {
   }
 
   private async assertProjectMember(userId: string, projectId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user?.role === 'ADMIN') return; // Admin bypass
+
     const project = await this.prisma.project.findUnique({ where: { id: projectId }, include: { members: true } });
     if (!project) throw new NotFoundException('Project not found');
     const isMember = project.ownerId === userId || project.members.some((m) => m.userId === userId);

@@ -15,8 +15,8 @@ export class TasksService {
   ) {}
 
   async create(userId: string, dto: CreateTaskDto) {
-    // Verify user is member of project
-    await this.assertProjectMember(userId, dto.projectId);
+    // Only project owner can create tasks
+    await this.assertProjectOwner(userId, dto.projectId);
 
     const task = await this.prisma.task.create({
       data: {
@@ -153,11 +153,28 @@ export class TasksService {
   }
 
   async update(userId: string, id: string, dto: UpdateTaskDto) {
-    const task = await this.prisma.task.findUnique({ where: { id }, include: { project: true, owner: true } });
+    const task = await this.prisma.task.findUnique({ where: { id }, include: { project: true, owner: true, assignees: true } });
     if (!task) throw new NotFoundException('Task not found');
 
-    // Verify user is member of project
-    await this.assertProjectMember(userId, task.projectId);
+    // Check user role in project
+    const role = await this.getUserRoleInProject(userId, task.projectId);
+    if (!role) throw new ForbiddenException('Not authorized for this project');
+
+    // OWNER and ADMIN can change anything
+    // EDITOR can only change status of tasks assigned to them
+    // VIEWER cannot change anything
+    if (role === 'EDITOR') {
+      const isAssigned = task.assignees.some((a) => a.id === userId);
+      if (!isAssigned) throw new ForbiddenException('You can only update tasks assigned to you');
+      
+      // Editor can only change status
+      if (dto.title !== undefined || dto.description !== undefined || dto.priority !== undefined || 
+          dto.dueDate !== undefined || dto.position !== undefined) {
+        throw new ForbiddenException('Editors can only change task status');
+      }
+    } else if (role === 'VIEWER') {
+      throw new ForbiddenException('Viewers cannot update tasks');
+    }
 
     const updated = await this.prisma.task.update({
       where: { id },
@@ -222,8 +239,8 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({ where: { id } });
     if (!task) throw new NotFoundException('Task not found');
 
-    // Verify user is member of project
-    await this.assertProjectMember(userId, task.projectId);
+    // Only project owner can delete tasks
+    await this.assertProjectOwner(userId, task.projectId);
 
     const title = task.title;
     await this.prisma.task.delete({ where: { id } });
@@ -238,8 +255,8 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new NotFoundException('Task not found');
 
-    // Verify user is member of project
-    await this.assertProjectMember(userId, task.projectId);
+    // Only project owner can assign tasks
+    await this.assertProjectOwner(userId, task.projectId);
 
     // Verify assignee is also a member
     await this.assertProjectMember(assigneeId, task.projectId);
@@ -283,8 +300,8 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new NotFoundException('Task not found');
 
-    // Verify user is member of project
-    await this.assertProjectMember(userId, task.projectId);
+    // Only project owner can unassign tasks
+    await this.assertProjectOwner(userId, task.projectId);
 
     return this.prisma.task.update({
       where: { id: taskId },
@@ -307,6 +324,9 @@ export class TasksService {
   }
 
   private async assertProjectMember(userId: string, projectId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user?.role === 'ADMIN') return; // Admin bypass
+
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: { members: true },
@@ -316,5 +336,30 @@ export class TasksService {
 
     const isMember = project.ownerId === userId || project.members.some((m) => m.userId === userId);
     if (!isMember) throw new ForbiddenException('Not authorized for this project');
+  }
+
+  private async assertProjectOwner(userId: string, projectId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user?.role === 'ADMIN') return; // Admin bypass
+
+    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) throw new NotFoundException('Project not found');
+    if (project.ownerId !== userId) throw new ForbiddenException('Only project owner can perform this action');
+  }
+
+  private async getUserRoleInProject(userId: string, projectId: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user?.role === 'ADMIN') return 'ADMIN';
+
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: { members: true },
+    });
+
+    if (!project) return null;
+    if (project.ownerId === userId) return 'OWNER';
+
+    const member = project.members.find((m) => m.userId === userId);
+    return member?.role || null;
   }
 }
