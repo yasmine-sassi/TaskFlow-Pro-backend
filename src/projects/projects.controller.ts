@@ -16,7 +16,9 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create project' })
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Create project (admin only)' })
   @ApiResponse({ status: 201, description: 'Project created' })
   create(@Req() req: any, @Body() dto: CreateProjectDto) {
     return this.projectsService.create(req.user.userId, dto);
@@ -41,6 +43,22 @@ export class ProjectsController {
   @ApiResponse({ status: 200, description: 'Project updated' })
   update(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateProjectDto) {
     return this.projectsService.update(req.user.userId, id, dto);
+  }
+
+  @Patch(':id/archive')
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Archive project (admin only)' })
+  archive(@Param('id') id: string) {
+    return this.projectsService.setArchived(id, true);
+  }
+
+  @Patch(':id/unarchive')
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Unarchive project (admin only)' })
+  unarchive(@Param('id') id: string) {
+    return this.projectsService.setArchived(id, false);
   }
 
   @Delete(':id')
@@ -79,5 +97,12 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Remove project member (owner only)' })
   removeMember(@Req() req: any, @Param('projectId') projectId: string, @Param('memberId') memberId: string) {
     return this.projectsService.removeMember(req.user.userId, projectId, memberId);
+  }
+
+  @Get(':projectId/assignable-users')
+  @ApiOperation({ summary: 'List users assignable to this project (admin or owner)' })
+  @ApiResponse({ status: 200, description: 'Assignable users list' })
+  getAssignableUsers(@Req() req: any, @Param('projectId') projectId: string) {
+    return this.projectsService.getAssignableUsers(req.user.userId, projectId);
   }
 }
