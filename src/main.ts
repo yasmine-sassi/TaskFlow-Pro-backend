@@ -28,7 +28,11 @@ async function bootstrap() {
   // Parsing & validation
   app.use(cookieParser());
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true, // Enable transformation
+    }),
   );
 
   // Global response interceptor

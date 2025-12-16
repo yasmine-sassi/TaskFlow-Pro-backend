@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString, MaxLength, IsUUID } from 'class-validator';
 
 export class CreateProjectDto {
   @ApiProperty({ example: 'Website Redesign' })
@@ -21,4 +21,18 @@ export class CreateProjectDto {
   @IsOptional()
   @IsBoolean()
   isArchived?: boolean;
+
+  @ApiProperty({ example: 'user-uuid', description: 'Owner user id', required: true })
+  @IsUUID()
+  ownerId: string;
+
+  @ApiProperty({ type: [String], required: false, description: 'Editors user ids' })
+  @IsOptional()
+  @IsArray()
+  editors?: string[];
+
+  @ApiProperty({ type: [String], required: false, description: 'Viewers user ids' })
+  @IsOptional()
+  @IsArray()
+  viewers?: string[];
 }

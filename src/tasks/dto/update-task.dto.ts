@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsDateString,
   IsInt,
+  IsArray,
 } from 'class-validator';
 import { TaskStatusDto, TaskPriorityDto } from './create-task.dto';
 
@@ -38,4 +39,10 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsInt()
   position?: number;
+
+  @ApiProperty({ example: ['label-uuid-1', 'label-uuid-2'], required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  labelIds?: string[];
 }

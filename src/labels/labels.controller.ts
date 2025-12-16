@@ -78,4 +78,6 @@ export class LabelsController {
   ) {
     return this.labelsService.detachFromTask(req.user.userId, taskId, labelId);
   }
+
+
 }
