@@ -32,6 +32,14 @@ export class TasksService {
         position: dto.position ?? 0,
         projectId: dto.projectId,
         ownerId: userId,
+        ...(dto.labelIds && dto.labelIds.length > 0
+          ? {
+              labels: {
+                connect: dto.labelIds.map((id) => ({ id })),
+              },
+            }
+          : {}
+        ),
         ...(dto.assigneeIds && dto.assigneeIds.length > 0
           ? {
               assignees: {
@@ -79,6 +87,7 @@ export class TasksService {
       status,
       priority,
       assigneeId,
+      labelId,
       search,
       page = 1,
       limit = 20,
@@ -120,7 +129,14 @@ export class TasksService {
               lastName: true,
             },
           },
+        labels: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+          },
         },
+      }
       }),
       this.prisma.task.count({ where }),
     ]);
@@ -137,7 +153,7 @@ export class TasksService {
   }
 
   async findMyTasks(userId: string, filter: FilterTaskDto) {
-    const { status, priority, search, page = 1, limit = 20 } = filter;
+    const { status, priority, labelId, search, page = 1, limit = 20 } = filter;
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -150,6 +166,7 @@ export class TasksService {
 
     if (status) where.status = status;
     if (priority) where.priority = priority;
+    if (labelId) where.labels = { some: { id: labelId } };
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -186,6 +203,13 @@ export class TasksService {
               name: true,
             },
           },
+        labels: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+          },
+        },
         },
       }),
       this.prisma.task.count({ where }),
@@ -223,6 +247,13 @@ export class TasksService {
           },
         },
         project: true,
+        labels: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+          },
+        },
       },
     });
 
@@ -237,7 +268,7 @@ export class TasksService {
   async update(userId: string, id: string, dto: UpdateTaskDto) {
     const task = await this.prisma.task.findUnique({
       where: { id },
-      include: { project: true, owner: true, assignees: true },
+      include: { project: true, owner: true, assignees: true , labels: true},
     });
     if (!task) throw new NotFoundException('Task not found');
 
@@ -261,13 +292,21 @@ export class TasksService {
         dto.description !== undefined ||
         dto.priority !== undefined ||
         dto.dueDate !== undefined ||
-        dto.position !== undefined
+        dto.position !== undefined ||
+        dto.labelIds !== undefined
       ) {
         throw new ForbiddenException('Editors can only change task status');
       }
     } else if (role === 'VIEWER') {
       throw new ForbiddenException('Viewers cannot update tasks');
     }
+  const labelUpdate = dto.labelIds !== undefined 
+    ? {
+        labels: {
+          set: dto.labelIds.map((id) => ({ id })),
+        },
+      }
+    : {};
 
     const updated = await this.prisma.task.update({
       where: { id },
@@ -278,6 +317,7 @@ export class TasksService {
         priority: dto.priority,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         position: dto.position,
+        ...labelUpdate,
       },
       include: {
         assignees: {
@@ -295,6 +335,13 @@ export class TasksService {
             lastName: true,
           },
         },
+      labels: {
+        select: {
+          id: true,
+          name: true,
+          color: true,
+        },
+      },
       },
     });
 

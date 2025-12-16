@@ -37,4 +37,9 @@ export class FilterTaskDto {
   @IsInt()
   @Min(1)
   limit?: number = 20;
+
+  @ApiProperty({ required: false, example: 'label-uuid' })
+  @IsOptional()
+  @IsString()
+  labelId?: string;
 }

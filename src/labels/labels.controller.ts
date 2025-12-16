@@ -47,4 +47,6 @@ export class LabelsController {
   detach(@Req() req: any, @Param('taskId') taskId: string, @Param('labelId') labelId: string) {
     return this.labelsService.detachFromTask(req.user.userId, taskId, labelId);
   }
+
+
 }

@@ -54,4 +54,10 @@ export class CreateTaskDto {
   @IsArray()
   @IsString({ each: true })
   assigneeIds?: string[];
+
+  @ApiProperty({ example: ['label-uuid-1', 'label-uuid-2'], required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  labelIds?: string[];
 }
