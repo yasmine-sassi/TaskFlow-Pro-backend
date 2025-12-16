@@ -35,13 +35,10 @@ export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Get()
-  @UseGuards(RoleGuard)
-  @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all users (Admin only)' })
   @ApiResponse({ status: 200, description: 'Users list returned successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin only' })
   async getAllUsers(): Promise<UserProfileResponseDto[]> {
     return this.usersService.getAllUsers();
   }
