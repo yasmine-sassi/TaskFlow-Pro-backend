@@ -150,13 +150,6 @@ export class TasksService {
               lastName: true,
             },
           },
-        labels: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-          },
-        },
       }
       }),
       this.prisma.task.count({ where }),
@@ -231,13 +224,6 @@ export class TasksService {
               name: true,
             },
           },
-        labels: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-          },
-        },
         },
       }),
       this.prisma.task.count({ where }),
@@ -282,13 +268,6 @@ export class TasksService {
           },
         },
         project: true,
-        labels: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-          },
-        },
       },
     });
 
@@ -377,13 +356,6 @@ export class TasksService {
             lastName: true,
           },
         },
-      labels: {
-        select: {
-          id: true,
-          name: true,
-          color: true,
-        },
-      },
       },
     });
 

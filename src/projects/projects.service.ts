@@ -180,4 +180,21 @@ export class ProjectsService {
     if (project.ownerId !== userId)
       throw new ForbiddenException('Only owner permitted');
   }
+
+  async setArchived(id: string, isArchived: boolean) {
+    const project = await this.prisma.project.findUnique({ where: { id } });
+    if (!project) throw new NotFoundException('Project not found');
+    return this.prisma.project.update({
+      where: { id },
+      data: { isArchived },
+    });
+  }
+
+  async getAssignableUsers(projectId: string) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: { members: true },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+  }
 }
