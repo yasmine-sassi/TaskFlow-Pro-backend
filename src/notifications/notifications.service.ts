@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationTypeDto } from './dto';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => NotificationsGateway))
+    private readonly notificationsGateway: NotificationsGateway,
+  ) {}
 
   async listNotifications(userId: string, unreadOnly: boolean = false) {
     const where = { userId, ...(unreadOnly && { isRead: false }) };
@@ -28,10 +33,19 @@ export class NotificationsService {
     if (!notification || notification.userId !== userId) {
       throw new NotFoundException('Notification not found');
     }
-    return this.prisma.notification.update({
+    const updatedNotification = await this.prisma.notification.update({
       where: { id },
       data: { isRead: true },
     });
+
+    // Emit WebSocket event
+    this.notificationsGateway.emitNotificationRead(userId, id);
+
+    // Update unread count
+    const unreadCount = await this.getUnreadCount(userId);
+    this.notificationsGateway.emitUnreadCountUpdate(userId, unreadCount.count);
+
+    return updatedNotification;
   }
 
   async markAllAsRead(userId: string) {
@@ -39,6 +53,10 @@ export class NotificationsService {
       where: { userId, isRead: false },
       data: { isRead: true },
     });
+
+    // Update unread count
+    this.notificationsGateway.emitUnreadCountUpdate(userId, 0);
+
     return { updated: true };
   }
 
@@ -60,7 +78,7 @@ export class NotificationsService {
     message: string,
     entityId?: string,
   ) {
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: {
         userId,
         type,
@@ -70,6 +88,15 @@ export class NotificationsService {
         isRead: false,
       },
     });
+
+    // Emit WebSocket event to the user
+    this.notificationsGateway.emitNewNotification(userId, notification);
+
+    // Update unread count
+    const unreadCount = await this.getUnreadCount(userId);
+    this.notificationsGateway.emitUnreadCountUpdate(userId, unreadCount.count);
+
+    return notification;
   }
 
   async notifyTaskAssignment(
