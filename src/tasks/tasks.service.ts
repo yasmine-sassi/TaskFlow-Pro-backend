@@ -434,10 +434,21 @@ export class TasksService {
       },
     });
 
+    // Fetch the user who is making the update (not the task owner)
+    const updatingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        firstName: true,
+        lastName: true,
+      },
+    });
+
+    const updaterName = updatingUser
+      ? `${updatingUser.firstName} ${updatingUser.lastName}`.trim()
+      : 'Unknown';
+
     // Notify if task marked complete
     if (dto.status === 'DONE' && task.status !== 'DONE') {
-      const updaterName =
-        `${updated.owner.firstName} ${updated.owner.lastName}`.trim();
       // Notify task owner and assignees
       await this.notifications
         .notifyTaskCompletion(task.ownerId, task.title, updaterName, id)
@@ -451,8 +462,6 @@ export class TasksService {
       }
     } else {
       // Notify of general update
-      const updaterName =
-        `${updated.owner.firstName} ${updated.owner.lastName}`.trim();
       await this.notifications
         .notifyTaskUpdate(task.ownerId, task.title, updaterName, id)
         .catch(() => {});
