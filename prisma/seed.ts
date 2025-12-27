@@ -410,30 +410,102 @@ async function main() {
     });
   }
 
-  // Titles by status
-  const inProgressTitles = [
-    'Implement JWT rotation',
-    'Optimize database indexes',
-    'Refactor notification service',
-    'Improve accessibility across app',
-    'Add audit log stream',
-    'Implement API rate limiting',
+  // Tasks with detailed descriptions by status
+  const inProgressTasks = [
+    {
+      title: 'Implement JWT rotation',
+      description:
+        'Add automatic JWT token rotation with refresh tokens. Include configuration for token expiration times and implement secure storage mechanisms.',
+    },
+    {
+      title: 'Optimize database indexes',
+      description:
+        'Analyze slow queries and add appropriate indexes to improve query performance. Focus on frequently accessed tables and complex joins.',
+    },
+    {
+      title: 'Refactor notification service',
+      description:
+        'Restructure the notification service to support multiple channels (email, SMS, push). Implement a queue-based system for better reliability.',
+    },
+    {
+      title: 'Improve accessibility across app',
+      description:
+        'Conduct accessibility audit and implement WCAG 2.1 AA compliance. Add proper ARIA labels, keyboard navigation, and screen reader support.',
+    },
+    {
+      title: 'Add audit log stream',
+      description:
+        'Implement comprehensive audit logging for all critical operations. Include user actions, system events, and data changes with timestamps.',
+    },
+    {
+      title: 'Implement API rate limiting',
+      description:
+        'Add rate limiting middleware to protect API endpoints from abuse. Configure different limits per user role and endpoint category.',
+    },
   ];
-  const todoTitles = [
-    'Write contribution guide',
-    'Add password reset flow',
-    'Create marketing landing page',
-    'Add search suggestions',
-    'Integrate SSO providers',
-    'Setup monitoring dashboards',
+  const todoTasks = [
+    {
+      title: 'Write contribution guide',
+      description:
+        'Create comprehensive documentation for contributors including code style, PR process, testing requirements, and community guidelines.',
+    },
+    {
+      title: 'Add password reset flow',
+      description:
+        'Implement secure password reset functionality with email verification. Include rate limiting and secure token generation.',
+    },
+    {
+      title: 'Create marketing landing page',
+      description:
+        'Design and develop a responsive landing page showcasing key features. Include hero section, feature highlights, and call-to-action.',
+    },
+    {
+      title: 'Add search suggestions',
+      description:
+        'Implement autocomplete search with type-ahead suggestions. Use debouncing and caching to optimize performance.',
+    },
+    {
+      title: 'Integrate SSO providers',
+      description:
+        'Add support for OAuth2 authentication with Google, GitHub, and Microsoft. Implement user account linking and migration.',
+    },
+    {
+      title: 'Setup monitoring dashboards',
+      description:
+        'Configure application monitoring with Grafana dashboards. Track key metrics like response times, error rates, and resource usage.',
+    },
   ];
-  const doneTitles = [
-    'Initial project scaffold',
-    'Dockerize backend service',
-    'Set up ESLint + Prettier',
-    'Configure CI pipeline',
-    'Create user profiles',
-    'Add health checks',
+  const doneTasks = [
+    {
+      title: 'Initial project scaffold',
+      description:
+        'Set up base project structure with NestJS framework. Configured module architecture, dependency injection, and folder organization.',
+    },
+    {
+      title: 'Dockerize backend service',
+      description:
+        'Created Docker containers for development and production. Optimized image size with multi-stage builds and added docker-compose setup.',
+    },
+    {
+      title: 'Set up ESLint + Prettier',
+      description:
+        'Configured code formatting and linting rules. Added pre-commit hooks with Husky to enforce code quality standards.',
+    },
+    {
+      title: 'Configure CI pipeline',
+      description:
+        'Set up GitHub Actions workflow for automated testing, linting, and deployment. Includes build optimization and caching.',
+    },
+    {
+      title: 'Create user profiles',
+      description:
+        'Implemented user profile management with avatar upload, bio, and preferences. Added profile visibility settings.',
+    },
+    {
+      title: 'Add health checks',
+      description:
+        'Implemented health check endpoints for database, cache, and external services. Integrated with load balancer monitoring.',
+    },
   ];
 
   // Distribute tasks across projects: Orion(5), Nexus(5), Zenith(4), Aurora(4)
@@ -474,11 +546,12 @@ async function main() {
       const ownerId = ownersForTasks[i % ownersForTasks.length];
       const assignees = [editors[i % editors.length]];
       const id = `${p.id}-ip-${i + 1}`;
+      const taskData = inProgressTasks[ipIdx % inProgressTasks.length];
       const t = await createTask({
         id,
         projectId: p.id,
-        title: inProgressTitles[ipIdx % inProgressTitles.length],
-        description: 'Work in progress',
+        title: taskData.title,
+        description: taskData.description,
         status: TaskStatus.IN_PROGRESS,
         position: position++,
         ownerId,
@@ -495,11 +568,12 @@ async function main() {
       const ownerId = ownersForTasks[i % ownersForTasks.length];
       const assignees = [editors[(i + 1) % editors.length]];
       const id = `${p.id}-todo-${i + 1}`;
+      const taskData = todoTasks[todoIdx % todoTasks.length];
       const t = await createTask({
         id,
         projectId: p.id,
-        title: todoTitles[todoIdx % todoTitles.length],
-        description: 'Planned work to do',
+        title: taskData.title,
+        description: taskData.description,
         status: TaskStatus.TODO,
         position: position++,
         ownerId,
@@ -516,11 +590,12 @@ async function main() {
       const ownerId = ownersForTasks[i % ownersForTasks.length];
       const assignees = [editors[(i + 2) % editors.length]];
       const id = `${p.id}-done-${i + 1}`;
+      const taskData = doneTasks[doneIdx % doneTasks.length];
       const t = await createTask({
         id,
         projectId: p.id,
-        title: doneTitles[doneIdx % doneTitles.length],
-        description: 'Completed task',
+        title: taskData.title,
+        description: taskData.description,
         status: TaskStatus.DONE,
         position: position++,
         ownerId,
