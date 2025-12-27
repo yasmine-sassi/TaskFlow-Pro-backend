@@ -213,20 +213,12 @@ export class ProjectsService {
     });
   }
 
-  async getAssignableUsers() {
-    return this.prisma.user.findMany({
-      where: { isActive: true },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { firstName: 'asc' },
+  async getProjectAssignableUsers(userId: string, projectId: string) {
+    await this.assertMember(userId, projectId);
+    const projectMembers = await this.prisma.projectMember.findMany({
+      where: { projectId },
+      select: { userId: true },
     });
+    return projectMembers;
   }
 }

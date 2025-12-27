@@ -356,7 +356,13 @@ export class TasksService {
   async update(userId: string, id: string, dto: UpdateTaskDto) {
     const task = await this.prisma.task.findUnique({
       where: { id },
-      include: { project: true, owner: true, assignees: true, labels: true },
+      include: { 
+        project: true, 
+        owner: true, 
+        assignees: true, 
+        labels: true,
+        subtasks: true,
+      },
     });
     if (!task) throw new NotFoundException('Task not found');
 
@@ -365,7 +371,7 @@ export class TasksService {
     if (!role) throw new ForbiddenException('Not authorized for this project');
 
     // OWNER and ADMIN can change anything
-    // EDITOR can only change status of tasks assigned to them
+    // EDITOR can change status and manage subtasks of tasks assigned to them
     // VIEWER cannot change anything
     if (role === 'EDITOR') {
       const isAssigned = task.assignees.some((a) => a.id === userId);
@@ -374,7 +380,7 @@ export class TasksService {
           'You can only update tasks assigned to you',
         );
 
-      // Editor can only change status
+      // Editor can only change status and manage subtasks
       if (
         dto.title !== undefined ||
         dto.description !== undefined ||
@@ -383,11 +389,12 @@ export class TasksService {
         dto.position !== undefined ||
         dto.labelIds !== undefined
       ) {
-        throw new ForbiddenException('Editors can only change task status');
+        throw new ForbiddenException('Editors can only change task status and manage subtasks');
       }
     } else if (role === 'VIEWER') {
       throw new ForbiddenException('Viewers cannot update tasks');
     }
+
     const labelUpdate =
       dto.labelIds !== undefined
         ? {
@@ -396,6 +403,41 @@ export class TasksService {
             },
           }
         : {};
+
+    // Handle subtask management
+    if (dto.subtasks !== undefined && dto.subtasks.length > 0) {
+      for (const subtaskDto of dto.subtasks) {
+        if (subtaskDto.id) {
+          // Update existing subtask
+          if (subtaskDto.title === null) {
+            // Delete subtask (indicated by null title)
+            await this.prisma.subtask.delete({
+              where: { id: subtaskDto.id },
+            }).catch(() => {});
+          } else {
+            // Update subtask
+            await this.prisma.subtask.update({
+              where: { id: subtaskDto.id },
+              data: {
+                title: subtaskDto.title,
+                isComplete: subtaskDto.isComplete,
+                position: subtaskDto.position,
+              },
+            }).catch(() => {});
+          }
+        } else if (subtaskDto.title) {
+          // Create new subtask
+          await this.prisma.subtask.create({
+            data: {
+              title: subtaskDto.title,
+              taskId: id,
+              position: subtaskDto.position ?? 0,
+              isComplete: subtaskDto.isComplete ?? false,
+            },
+          }).catch(() => {});
+        }
+      }
+    }
 
     const updated = await this.prisma.task.update({
       where: { id },
@@ -430,6 +472,17 @@ export class TasksService {
             firstName: true,
             lastName: true,
           },
+        },
+        subtasks: {
+          select: {
+            id: true,
+            title: true,
+            isComplete: true,
+            position: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: { position: 'asc' },
         },
       },
     });

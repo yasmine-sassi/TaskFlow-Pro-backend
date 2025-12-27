@@ -137,4 +137,13 @@ export class ProjectsController {
       memberId,
     );
   }
+
+  @Get(':projectId/assignable-users')
+  @ApiOperation({ summary: 'Get users assignable to the project' })
+  getProjectAssignableUsers(@Req() req: any, @Param('projectId') projectId: string) {
+    return this.projectsService.getProjectAssignableUsers(
+      req.user.userId,
+      projectId,
+    );
+  }
 }
