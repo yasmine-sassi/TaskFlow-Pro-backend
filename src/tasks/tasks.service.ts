@@ -502,24 +502,28 @@ export class TasksService {
 
     // Notify if task marked complete
     if (dto.status === 'DONE' && task.status !== 'DONE') {
-      // Notify task owner and assignees
-      await this.notifications
-        .notifyTaskCompletion(task.ownerId, task.title, updaterName, id)
-        .catch(() => {});
+      // Notify task owner and assignees (exclude the user making the update)
+      if (task.ownerId !== userId) {
+        await this.notifications
+          .notifyTaskCompletion(task.ownerId, task.title, updaterName, id)
+          .catch(() => {});
+      }
       for (const assignee of updated.assignees) {
-        if (assignee.id !== task.ownerId) {
+        if (assignee.id !== userId && assignee.id !== task.ownerId) {
           await this.notifications
             .notifyTaskCompletion(assignee.id, task.title, updaterName, id)
             .catch(() => {});
         }
       }
     } else {
-      // Notify of general update
-      await this.notifications
-        .notifyTaskUpdate(task.ownerId, task.title, updaterName, id)
-        .catch(() => {});
+      // Notify of general update (exclude the user making the update)
+      if (task.ownerId !== userId) {
+        await this.notifications
+          .notifyTaskUpdate(task.ownerId, task.title, updaterName, id)
+          .catch(() => {});
+      }
       for (const assignee of updated.assignees) {
-        if (assignee.id !== task.ownerId) {
+        if (assignee.id !== userId && assignee.id !== task.ownerId) {
           await this.notifications
             .notifyTaskUpdate(assignee.id, task.title, updaterName, id)
             .catch(() => {});
