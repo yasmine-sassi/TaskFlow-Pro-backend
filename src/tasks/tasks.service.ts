@@ -681,4 +681,22 @@ export class TasksService {
     const member = project.members.find((m) => m.userId === userId);
     return member?.role || null;
   }
+
+  async checkTaskTitleExists(title: string, excludeId?: string) {
+    const existingTask = await this.prisma.task.findFirst({
+      where: {
+        title: {
+          equals: title,
+          mode: 'insensitive', // Case-insensitive comparison
+        },
+        ...(excludeId && { id: { not: excludeId } }),
+      },
+    });
+    return {
+      statusCode: 200,
+      message: 'Task title check completed',
+      data: !!existingTask,
+      timestamp: new Date().toISOString(),
+    };
+  }
 }

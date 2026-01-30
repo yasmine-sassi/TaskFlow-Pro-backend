@@ -106,4 +106,12 @@ export class TasksController {
   ) {
     return this.tasksService.unassignUser(req.user.userId, taskId, userId);
   }
+
+  @Get('check-title/:title')
+  @ApiOperation({ summary: 'Check if task title exists' })
+  @ApiResponse({ status: 200, description: 'Returns true if title exists, false otherwise' })
+  checkTaskTitleExists(@Param('title') title: string, @Req() req: any) {
+    const excludeId = req.query.excludeId;
+    return this.tasksService.checkTaskTitleExists(title, excludeId);
+  }
 }

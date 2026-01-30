@@ -146,4 +146,12 @@ export class ProjectsController {
       projectId,
     );
   }
+
+  @Get('check-name/:name')
+  @ApiOperation({ summary: 'Check if project name exists' })
+  @ApiResponse({ status: 200, description: 'Returns true if name exists, false otherwise' })
+  checkProjectNameExists(@Param('name') name: string, @Req() req: any) {
+    const excludeId = req.query.excludeId;
+    return this.projectsService.checkProjectNameExists(name, excludeId);
+  }
 }

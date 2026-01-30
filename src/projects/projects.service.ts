@@ -221,4 +221,22 @@ export class ProjectsService {
     });
     return projectMembers;
   }
+
+  async checkProjectNameExists(name: string, excludeId?: string) {
+    const existingProject = await this.prisma.project.findFirst({
+      where: {
+        name: {
+          equals: name,
+          mode: 'insensitive', // Case-insensitive comparison
+        },
+        ...(excludeId && { id: { not: excludeId } }),
+      },
+    });
+    return {
+      statusCode: 200,
+      message: 'Project name check completed',
+      data: !!existingProject,
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
