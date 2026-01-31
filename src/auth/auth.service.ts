@@ -68,6 +68,28 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
+  /**
+   * Verify that the provided password matches the user's current password
+   * Used for password change validation
+   */
+  async verifyPassword(userId: string, password: string): Promise<boolean> {
+    console.log('Verifying password for user:', userId);
+    
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      console.log('User not found:', userId);
+      return false;
+    }
+
+    // Compare provided password with stored hash
+    const isValid = await bcrypt.compare(password, user.password);
+    console.log('Password comparison result:', isValid);
+    return isValid;
+  }
+
   private buildAuthResponse(user: any): AuthResponseDto {
     const accessToken = this.jwt.sign({
       sub: user.id,

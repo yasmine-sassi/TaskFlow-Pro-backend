@@ -88,6 +88,23 @@ export class AuthController {
     };
   }
 
+  @Post('verify-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Verify current password' })
+  @ApiResponse({ status: 200, description: 'Password verification result' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async verifyPassword(
+    @Body() dto: { password: string },
+    @Request() req: any
+  ) {
+    console.log('Verifying password for userId:', req.user?.userId);
+    const isValid = await this.auth.verifyPassword(req.user.userId, dto.password);
+    console.log('Password verification result:', isValid);
+    return { isValid };
+  }
+
   @Get('admin-only')
   @UseGuards(JwtAuthGuard, RoleGuard)
   @Roles(UserRole.ADMIN)
