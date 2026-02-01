@@ -9,6 +9,7 @@ import { ActivityService } from '../activity/activity.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AddMemberDto, UpdateMemberDto } from './dto/member.dto';
+import { ProjectMemberRole } from '@prisma/client';
 
 @Injectable()
 export class ProjectsService {
@@ -18,25 +19,98 @@ export class ProjectsService {
     private readonly activity: ActivityService,
   ) {}
 
-  async create(ownerId: string, dto: CreateProjectDto) {
+  async create(adminId: string, dto: CreateProjectDto) {
+    // Build members array: one owner + editors + viewers
+    const membersData: Array<{ userId: string; role: ProjectMemberRole }> = [];
+
+    // Add owner
+    membersData.push({ userId: dto.ownerId, role: ProjectMemberRole.OWNER });
+
+    // Add editors
+    if (dto.editors && dto.editors.length > 0) {
+      dto.editors.forEach((editorId) => {
+        if (editorId !== dto.ownerId) {
+          // Don't duplicate owner
+          membersData.push({ userId: editorId, role: ProjectMemberRole.EDITOR });
+        }
+      });
+    }
+
+    // Add viewers
+    if (dto.viewers && dto.viewers.length > 0) {
+      dto.viewers.forEach((viewerId) => {
+        if (viewerId !== dto.ownerId && !membersData.some((m) => m.userId === viewerId)) {
+          // Don't duplicate owner or editors
+          membersData.push({ userId: viewerId, role: ProjectMemberRole.VIEWER });
+        }
+      });
+    }
+
     const project = await this.prisma.project.create({
       data: {
         name: dto.name,
         description: dto.description,
         color: dto.color,
         isArchived: dto.isArchived ?? false,
-        ownerId,
+        ownerId: dto.ownerId,
         members: {
-          create: [{ userId: ownerId, role: 'OWNER' }],
+          createMany: {
+            data: membersData.map((member) => ({
+              userId: member.userId,
+              role: member.role,
+            })),
+          },
+        },
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
         },
       },
     });
+
+    // Notify initial members (excluding the creator)
+    const invitedUserIds = Array.from(
+      new Set(membersData.map((m) => m.userId).filter((id) => id && id !== adminId)),
+    );
+
+    await Promise.all(
+      invitedUserIds.map((userId) =>
+        this.notifications
+          .notifyProjectInvite(userId, project.name, project.id)
+          .catch(() => {})
+      )
+    );
+
+    // Record activity for project creation
+    await this.activity
+      .recordProjectCreated(adminId, project.id, project.name)
+      .catch(() => {});
+
     return project;
   }
 
   async findAll(userId: string, role?: string) {
     // Admins get all projects, regular users get only accessible projects
-    if (role === 'ADMIN') {
+    const normalizedRole = role ? role.toString().trim().toLowerCase() : '';
+    if (normalizedRole === 'admin' || role === 'ADMIN') {
       return this.prisma.project.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
@@ -169,11 +243,17 @@ export class ProjectsService {
     return project;
   }
 
-  async update(userId: string, id: string, dto: UpdateProjectDto) {
+  async update(userId: string, id: string, dto: UpdateProjectDto, userRole?: string) {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) throw new NotFoundException('Project not found');
-    if (project.ownerId !== userId)
-      throw new ForbiddenException('Only owner can update project');
+
+    // Allow if user is owner OR if user is admin
+    const isOwner = project.ownerId === userId;
+    const isAdmin = await this.isAdminUser(userId, userRole);
+
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('Only owner or admin can update project');
+    }
 
     const updated = await this.prisma.project.update({
       where: { id },
@@ -182,6 +262,28 @@ export class ProjectsService {
         description: dto.description,
         color: dto.color,
         isArchived: dto.isArchived,
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
 
@@ -226,8 +328,8 @@ export class ProjectsService {
     });
   }
 
-  async addMember(userId: string, projectId: string, dto: AddMemberDto) {
-    await this.assertOwner(userId, projectId);
+  async addMember(userId: string, projectId: string, dto: AddMemberDto, userRole?: string) {
+    await this.assertOwner(userId, projectId, userRole);
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -255,8 +357,9 @@ export class ProjectsService {
     projectId: string,
     memberId: string,
     dto: UpdateMemberDto,
+    userRole?: string,
   ) {
-    await this.assertOwner(userId, projectId);
+    await this.assertOwner(userId, projectId, userRole);
     // ensure member belongs to project
     const member = await this.prisma.projectMember.findUnique({
       where: { id: memberId },
@@ -269,8 +372,8 @@ export class ProjectsService {
     });
   }
 
-  async removeMember(userId: string, projectId: string, memberId: string) {
-    await this.assertOwner(userId, projectId);
+  async removeMember(userId: string, projectId: string, memberId: string, userRole?: string) {
+    await this.assertOwner(userId, projectId, userRole);
     const member = await this.prisma.projectMember.findUnique({
       where: { id: memberId },
     });
@@ -296,16 +399,29 @@ export class ProjectsService {
       throw new ForbiddenException('Not authorized for this project');
   }
 
-  private async assertOwner(userId: string, projectId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (user?.role === 'ADMIN') return; // Admin bypass
+  private async assertOwner(userId: string, projectId: string, userRole?: string) {
+    if (await this.isAdminUser(userId, userRole)) return;
 
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
     if (!project) throw new NotFoundException('Project not found');
     if (project.ownerId !== userId)
-      throw new ForbiddenException('Only owner permitted');
+      throw new ForbiddenException('Only owner or admin permitted');
+  }
+
+  private async isAdminUser(userId: string, userRole?: string): Promise<boolean> {
+    const normalizedRole = userRole ? userRole.toString().trim().toLowerCase() : '';
+    if (normalizedRole === 'admin' || userRole === 'ADMIN') return true;
+
+    if (!userId) return false;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    return user?.role === 'ADMIN';
   }
 
   async setArchived(id: string, isArchived: boolean) {

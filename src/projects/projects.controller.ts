@@ -57,14 +57,14 @@ export class ProjectsController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update project (owner only)' })
+  @ApiOperation({ summary: 'Update project (owner or admin)' })
   @ApiResponse({ status: 200, description: 'Project updated' })
   update(
     @Req() req: any,
     @Param('id') id: string,
     @Body() dto: UpdateProjectDto,
   ) {
-    return this.projectsService.update(req.user.userId, id, dto);
+    return this.projectsService.update(req.user.userId, id, dto, req.user.role);
   }
 
   @Patch(':id/archive')
@@ -99,17 +99,17 @@ export class ProjectsController {
   }
 
   @Post(':projectId/members')
-  @ApiOperation({ summary: 'Add project member (owner only)' })
+  @ApiOperation({ summary: 'Add project member (owner or admin)' })
   addMember(
     @Req() req: any,
     @Param('projectId') projectId: string,
     @Body() dto: AddMemberDto,
   ) {
-    return this.projectsService.addMember(req.user.userId, projectId, dto);
+    return this.projectsService.addMember(req.user.userId, projectId, dto, req.user.role);
   }
 
   @Patch(':projectId/members/:memberId')
-  @ApiOperation({ summary: 'Update member role (owner only)' })
+  @ApiOperation({ summary: 'Update member role (owner or admin)' })
   updateMember(
     @Req() req: any,
     @Param('projectId') projectId: string,
@@ -121,11 +121,12 @@ export class ProjectsController {
       projectId,
       memberId,
       dto,
+      req.user.role,
     );
   }
 
   @Delete(':projectId/members/:memberId')
-  @ApiOperation({ summary: 'Remove project member (owner only)' })
+  @ApiOperation({ summary: 'Remove project member (owner or admin)' })
   removeMember(
     @Req() req: any,
     @Param('projectId') projectId: string,
@@ -135,6 +136,7 @@ export class ProjectsController {
       req.user.userId,
       projectId,
       memberId,
+      req.user.role,
     );
   }
 
