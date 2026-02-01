@@ -39,6 +39,58 @@ export class ProjectsService {
     if (role === 'ADMIN') {
       return this.prisma.project.findMany({
         orderBy: { createdAt: 'desc' },
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  firstName: true,
+                  lastName: true,
+                  avatar: true,
+                  role: true,
+                },
+              },
+            },
+          },
+          tasks: {
+            include: {
+              assignees: {
+                select: {
+                  id: true,
+                  email: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              labels: {
+                select: {
+                  id: true,
+                  name: true,
+                  color: true,
+                },
+              },
+              subtasks: {
+                select: {
+                  id: true,
+                  title: true,
+                  isComplete: true,
+                  position: true,
+                },
+              },
+            },
+          },
+          owner: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
+          },
+        },
       });
     }
 
@@ -48,6 +100,58 @@ export class ProjectsService {
         OR: [{ ownerId: userId }, { members: { some: { userId } } }],
       },
       orderBy: { createdAt: 'desc' },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                avatar: true,
+                role: true,
+              },
+            },
+          },
+        },
+        tasks: {
+          include: {
+            assignees: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            labels: {
+              select: {
+                id: true,
+                name: true,
+                color: true,
+              },
+            },
+            subtasks: {
+              select: {
+                id: true,
+                title: true,
+                isComplete: true,
+                position: true,
+              },
+            },
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+          },
+        },
+      },
     });
   }
 
