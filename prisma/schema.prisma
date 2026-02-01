@@ -119,6 +119,7 @@ model Task {
   description String?      @db.Text
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
+  startDate   DateTime?
   dueDate     DateTime?
   position    Int          @default(0)
   projectId   String

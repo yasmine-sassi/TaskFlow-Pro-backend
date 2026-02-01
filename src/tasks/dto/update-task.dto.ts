@@ -54,6 +54,11 @@ export class UpdateTaskDto {
   @IsEnum(TaskPriorityDto)
   priority?: TaskPriorityDto;
 
+  @ApiProperty({ example: '2025-01-01T00:00:00Z', required: false })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
   @ApiProperty({ example: '2025-12-25T23:59:59Z', required: false })
   @IsOptional()
   @IsDateString()

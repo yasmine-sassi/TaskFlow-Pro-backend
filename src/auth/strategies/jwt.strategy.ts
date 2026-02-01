@@ -20,6 +20,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    // Validate that required payload fields exist
+    if (!payload || !payload.sub) {
+      return null;
+    }
+
     // Fetch user to ensure it still exists and is active
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
