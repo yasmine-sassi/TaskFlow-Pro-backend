@@ -73,20 +73,16 @@ export class AuthService {
    * Used for password change validation
    */
   async verifyPassword(userId: string, password: string): Promise<boolean> {
-    console.log('Verifying password for user:', userId);
-    
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
     if (!user) {
-      console.log('User not found:', userId);
       return false;
     }
 
     // Compare provided password with stored hash
     const isValid = await bcrypt.compare(password, user.password);
-    console.log('Password comparison result:', isValid);
     return isValid;
   }
 
