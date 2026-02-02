@@ -264,6 +264,19 @@ export class ProjectsService {
         isArchived: dto.isArchived,
       },
       include: {
+        tasks: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            status: true,
+            priority: true,
+            dueDate: true,
+            startDate: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
         members: {
           include: {
             user: {

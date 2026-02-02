@@ -208,6 +208,77 @@ async function main() {
     },
   });
 
+  // Additional active projects for demo
+  const projectVortex = await prisma.project.create({
+    data: {
+      id: 'project-vortex',
+      name: 'Project Vortex',
+      description: 'Real-time collaboration features',
+      color: '#EC4899',
+      ownerId: dom.id,
+    },
+  });
+
+  const projectEcho = await prisma.project.create({
+    data: {
+      id: 'project-echo',
+      name: 'Project Echo',
+      description: 'Analytics and reporting dashboard',
+      color: '#06B6D4',
+      ownerId: ala.id,
+    },
+  });
+
+  const projectPulse = await prisma.project.create({
+    data: {
+      id: 'project-pulse',
+      name: 'Project Pulse',
+      description: 'Health monitoring and alerts system',
+      color: '#14B8A6',
+      ownerId: yasmine.id,
+    },
+  });
+
+  const projectTitan = await prisma.project.create({
+    data: {
+      id: 'project-titan',
+      name: 'Project Titan',
+      description: 'Enterprise infrastructure overhaul',
+      color: '#A855F7',
+      ownerId: racem.id,
+    },
+  });
+
+  const projectSupernova = await prisma.project.create({
+    data: {
+      id: 'project-supernova',
+      name: 'Project Supernova',
+      description: 'API v2 redesign and migration',
+      color: '#EF4444',
+      ownerId: syrine.id,
+    },
+  });
+
+  const projectQuantum = await prisma.project.create({
+    data: {
+      id: 'project-quantum',
+      name: 'Project Quantum',
+      description: 'Advanced algorithm optimization',
+      color: '#6366F1',
+      ownerId: dom.id,
+    },
+  });
+
+  const projectHorizon = await prisma.project.create({
+    data: {
+      id: 'project-horizon',
+      name: 'Project Horizon',
+      description: 'Mobile app redesign and launch',
+      color: '#F59E0B',
+      ownerId: ala.id,
+    },
+  });
+
   // Project members (assign editors/viewers, admin is not owner and has no tasks)
   const memberUpserts = [
     // Orion
@@ -299,6 +370,118 @@ async function main() {
       userId: racem.id,
       role: ProjectMemberRole.VIEWER,
     },
+    // Vortex
+    {
+      projectId: projectVortex.id,
+      userId: dom.id,
+      role: ProjectMemberRole.OWNER,
+    },
+    {
+      projectId: projectVortex.id,
+      userId: yasmine.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    {
+      projectId: projectVortex.id,
+      userId: racem.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    // Echo
+    {
+      projectId: projectEcho.id,
+      userId: ala.id,
+      role: ProjectMemberRole.OWNER,
+    },
+    {
+      projectId: projectEcho.id,
+      userId: dom.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    {
+      projectId: projectEcho.id,
+      userId: syrine.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    // Pulse
+    {
+      projectId: projectPulse.id,
+      userId: yasmine.id,
+      role: ProjectMemberRole.OWNER,
+    },
+    {
+      projectId: projectPulse.id,
+      userId: ala.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    {
+      projectId: projectPulse.id,
+      userId: amine.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    // Titan
+    {
+      projectId: projectTitan.id,
+      userId: racem.id,
+      role: ProjectMemberRole.OWNER,
+    },
+    {
+      projectId: projectTitan.id,
+      userId: dom.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    {
+      projectId: projectTitan.id,
+      userId: yasmine.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    // Supernova
+    {
+      projectId: projectSupernova.id,
+      userId: syrine.id,
+      role: ProjectMemberRole.OWNER,
+    },
+    {
+      projectId: projectSupernova.id,
+      userId: racem.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    {
+      projectId: projectSupernova.id,
+      userId: ala.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    // Quantum
+    {
+      projectId: projectQuantum.id,
+      userId: dom.id,
+      role: ProjectMemberRole.OWNER,
+    },
+    {
+      projectId: projectQuantum.id,
+      userId: syrine.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    {
+      projectId: projectQuantum.id,
+      userId: amine.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    // Horizon
+    {
+      projectId: projectHorizon.id,
+      userId: ala.id,
+      role: ProjectMemberRole.OWNER,
+    },
+    {
+      projectId: projectHorizon.id,
+      userId: dom.id,
+      role: ProjectMemberRole.EDITOR,
+    },
+    {
+      projectId: projectHorizon.id,
+      userId: racem.id,
+      role: ProjectMemberRole.EDITOR,
+    },
     // Archived: Nebula
     {
       projectId: projectNebula.id,
@@ -346,6 +529,13 @@ async function main() {
     [projectNexus.id]: [racem.id, syrine.id],
     [projectZenith.id]: [dom.id, amine.id],
     [projectAurora.id]: [ala.id, dom.id],
+    [projectVortex.id]: [yasmine.id, racem.id],
+    [projectEcho.id]: [dom.id, syrine.id],
+    [projectPulse.id]: [ala.id, amine.id],
+    [projectTitan.id]: [dom.id, yasmine.id],
+    [projectSupernova.id]: [racem.id, ala.id],
+    [projectQuantum.id]: [syrine.id, amine.id],
+    [projectHorizon.id]: [dom.id, racem.id],
   };
 
   const ownerByProject: Record<string, string> = {
@@ -353,6 +543,13 @@ async function main() {
     [projectNexus.id]: yasmine.id,
     [projectZenith.id]: racem.id,
     [projectAurora.id]: syrine.id,
+    [projectVortex.id]: dom.id,
+    [projectEcho.id]: ala.id,
+    [projectPulse.id]: yasmine.id,
+    [projectTitan.id]: racem.id,
+    [projectSupernova.id]: syrine.id,
+    [projectQuantum.id]: dom.id,
+    [projectHorizon.id]: ala.id,
   };
 
   // Helper to create tasks for a project with editor/owner-only assignees
@@ -514,6 +711,13 @@ async function main() {
     projectNexus,
     projectZenith,
     projectAurora,
+    projectVortex,
+    projectEcho,
+    projectPulse,
+    projectTitan,
+    projectSupernova,
+    projectQuantum,
+    projectHorizon,
   ];
   const distribution: Record<
     string,
@@ -523,6 +727,13 @@ async function main() {
     [projectNexus.id]: { ip: 2, todo: 2, done: 1 },
     [projectZenith.id]: { ip: 1, todo: 1, done: 2 },
     [projectAurora.id]: { ip: 1, todo: 1, done: 2 },
+    [projectVortex.id]: { ip: 3, todo: 3, done: 2 },
+    [projectEcho.id]: { ip: 2, todo: 3, done: 3 },
+    [projectPulse.id]: { ip: 4, todo: 2, done: 2 },
+    [projectTitan.id]: { ip: 2, todo: 2, done: 3 },
+    [projectSupernova.id]: { ip: 3, todo: 3, done: 1 },
+    [projectQuantum.id]: { ip: 2, todo: 2, done: 2 },
+    [projectHorizon.id]: { ip: 1, todo: 2, done: 2 },
   };
 
   let ipIdx = 0,

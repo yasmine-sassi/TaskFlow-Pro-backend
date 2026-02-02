@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Get,
   Response,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -103,6 +104,20 @@ export class AuthController {
     const isValid = await this.auth.verifyPassword(req.user.userId, dto.password);
     console.log('Password verification result:', isValid);
     return { isValid };
+  }
+
+  @Get('check-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Check if email is available for registration' })
+  @ApiResponse({ status: 200, description: 'Email availability check' })
+  async checkEmail(@Query('email') email: string) {
+    console.log('Check-email endpoint called with:', email);
+    if (!email) {
+      return { available: false };
+    }
+    const available = await this.auth.isEmailAvailable(email);
+    console.log(`Email "${email}" available:`, available);
+    return { available };
   }
 
   @Get('admin-only')
