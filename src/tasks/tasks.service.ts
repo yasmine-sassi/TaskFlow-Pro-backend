@@ -501,33 +501,85 @@ export class TasksService {
       ? `${updatingUser.firstName} ${updatingUser.lastName}`.trim()
       : 'Unknown';
 
+    // Debug logging
+    console.log('=== TASK UPDATE NOTIFICATION DEBUG ===');
+    console.log('Task ID:', id);
+    console.log('Task Title:', task.title);
+    console.log('Updater ID:', userId);
+    console.log('Updater Name:', updaterName);
+    console.log('Project Owner ID:', task.project.ownerId);
+    console.log('Task Owner ID:', task.ownerId);
+    console.log('Assignees:', updated.assignees.map(a => ({ id: a.id, name: `${a.firstName} ${a.lastName}` })));
+    console.log('Status change:', task.status, '->', dto.status);
+    console.log('======================================');
+
     // Notify if task marked complete
     if (dto.status === 'DONE' && task.status !== 'DONE') {
-      // Notify task owner and assignees (exclude the user making the update)
-      if (task.ownerId !== userId) {
+      console.log('Task marked as DONE - sending completion notifications');
+      
+      // Notify project owner (if different from updater)
+      if (task.project.ownerId !== userId) {
+        console.log('Notifying project owner:', task.project.ownerId);
+        await this.notifications
+          .notifyTaskCompletion(task.project.ownerId, task.title, updaterName, id)
+          .catch((err) => {
+            console.error('Failed to notify project owner:', err);
+          });
+      }
+      
+      // Notify task owner (if different from updater and project owner)
+      if (task.ownerId !== userId && task.ownerId !== task.project.ownerId) {
+        console.log('Notifying task owner:', task.ownerId);
         await this.notifications
           .notifyTaskCompletion(task.ownerId, task.title, updaterName, id)
-          .catch(() => {});
+          .catch((err) => {
+            console.error('Failed to notify task owner:', err);
+          });
       }
+      
+      // Notify assignees (exclude updater, task owner, and project owner)
       for (const assignee of updated.assignees) {
-        if (assignee.id !== userId && assignee.id !== task.ownerId) {
+        if (assignee.id !== userId && assignee.id !== task.ownerId && assignee.id !== task.project.ownerId) {
+          console.log('Notifying assignee:', assignee.id);
           await this.notifications
             .notifyTaskCompletion(assignee.id, task.title, updaterName, id)
-            .catch(() => {});
+            .catch((err) => {
+              console.error('Failed to notify assignee:', err);
+            });
         }
       }
     } else {
-      // Notify of general update (exclude the user making the update)
-      if (task.ownerId !== userId) {
+      console.log('Task updated (not completion) - sending update notifications');
+      
+      // Notify project owner (if different from updater)
+      if (task.project.ownerId !== userId) {
+        console.log('Notifying project owner:', task.project.ownerId);
+        await this.notifications
+          .notifyTaskUpdate(task.project.ownerId, task.title, updaterName, id)
+          .catch((err) => {
+            console.error('Failed to notify project owner:', err);
+          });
+      }
+      
+      // Notify task owner (if different from updater and project owner)
+      if (task.ownerId !== userId && task.ownerId !== task.project.ownerId) {
+        console.log('Notifying task owner:', task.ownerId);
         await this.notifications
           .notifyTaskUpdate(task.ownerId, task.title, updaterName, id)
-          .catch(() => {});
+          .catch((err) => {
+            console.error('Failed to notify task owner:', err);
+          });
       }
+      
+      // Notify assignees (exclude updater, task owner, and project owner)
       for (const assignee of updated.assignees) {
-        if (assignee.id !== userId && assignee.id !== task.ownerId) {
+        if (assignee.id !== userId && assignee.id !== task.ownerId && assignee.id !== task.project.ownerId) {
+          console.log('Notifying assignee:', assignee.id);
           await this.notifications
             .notifyTaskUpdate(assignee.id, task.title, updaterName, id)
-            .catch(() => {});
+            .catch((err) => {
+              console.error('Failed to notify assignee:', err);
+            });
         }
       }
     }

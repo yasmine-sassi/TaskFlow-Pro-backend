@@ -78,6 +78,8 @@ export class NotificationsService {
     message: string,
     entityId?: string,
   ) {
+    console.log('Creating notification:', { userId, type, title, message, entityId });
+    
     const notification = await this.prisma.notification.create({
       data: {
         userId,
@@ -89,12 +91,16 @@ export class NotificationsService {
       },
     });
 
+    console.log('Notification created in DB:', notification.id);
+
     // Emit WebSocket event to the user
     this.notificationsGateway.emitNewNotification(userId, notification);
+    console.log('WebSocket event emitted to user:', userId);
 
     // Update unread count
     const unreadCount = await this.getUnreadCount(userId);
     this.notificationsGateway.emitUnreadCountUpdate(userId, unreadCount.count);
+    console.log('Unread count updated:', unreadCount.count);
 
     return notification;
   }
