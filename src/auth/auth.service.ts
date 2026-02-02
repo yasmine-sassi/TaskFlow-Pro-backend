@@ -86,6 +86,17 @@ export class AuthService {
     return isValid;
   }
 
+  /**
+   * Check if an email is available for registration
+   */
+  async isEmailAvailable(email: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    return !user;
+  }
+
   private buildAuthResponse(user: any): AuthResponseDto {
     const accessToken = this.jwt.sign({
       sub: user.id,
